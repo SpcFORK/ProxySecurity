@@ -21,6 +21,9 @@ var {
    * secure handler objects and preventInject for deploying secure proxies.
    */
   static ProxySecurity = ProxySecurity;
+  constructor() {
+    throw new Error("Cannot instantiate static class ProxySecurity");
+  }
 
   /**
    * Retrieves the value of a property without triggering any getter.
@@ -30,7 +33,7 @@ var {
    * @returns {*} The value of the specified property.
    */
   static secureGet(obj, prop) {
-    return Reflect.getOwnPropertyDescriptor(obj, prop).value;
+    return Reflect.getOwnPropertyDescriptor(obj, prop)?.value;
   }
 
   /**
@@ -53,6 +56,7 @@ var {
    * @returns {boolean} Indicates whether the property was successfully replaced.
    */
   static secureLooseDelete(obj, prop) {
+    if (!ProxySecurity.secureHas(obj, prop)) return false;
     return Reflect.defineProperty(obj, prop, { value: undefined });
   }
 
@@ -64,7 +68,11 @@ var {
    * @returns {boolean} True if the property exists, otherwise false.
    */
   static secureHas(obj, prop) {
-    return Reflect.ownKeys(obj).includes(prop);
+    let prt = Reflect.getPrototypeOf(obj);
+    return (
+      Reflect.ownKeys(obj).includes(prop) ||
+      (prt && ProxySecurity.secureHas(prt, prop))
+    );
   }
 
   /**
@@ -143,4 +151,3 @@ var {
 };
 
 if (typeof module !== "undefined") module.exports = ProxySecurity;
-if (typeof window !== "undefined") window.ProxySecurity = ProxySecurity;
